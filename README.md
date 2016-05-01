@@ -12,4 +12,4 @@ requests 2.10.0
 'interval_retry_login':  In second. If the login failed (e.g. wrong username & password combination, or the CAS server was down), how long the program will wait before next attempt. Default value is 10.  
 ## Contacts
 If there are any questions, please reach me on Telegram.   
-[@NorrisHua](telegram.me/NorrisHua)
+[@NorrisHua](https://www.telegram.me/NorrisHua)
