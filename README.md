@@ -2,7 +2,7 @@
 SUSTC network account auto login. Coded in Python. Java version with GUI is coming soon.      
 [caslogin-gui](https://github.com/NorrisHua/caslogin-gui)
 ## Requirements
-Python 2.7+
+Python 2.7+    
 requests 2.10.0
 ### Installation
     pip install requests
