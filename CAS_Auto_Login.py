@@ -19,7 +19,7 @@ def newConfig():
     username=input('Username: ')
     passwd=input('Password: ')
     f=open('config.json','w')
-    config={"username": username, "password": passwd, "testUrl": "http://g.cn", "interval_retry_connection": "20", "interval_retry_login": "10", "interval_check_status": "300"}
+    config={"username": username, "password": passwd, "testUrl": "http://www.v2ex.com/generate_204", "interval_retry_connection": "20", "interval_retry_login": "10", "interval_check_status": "300"}
     f.write(json.dumps(config))
     f.close()
     printWithTimeStamp('Configurations successfully saved.')    
@@ -50,8 +50,7 @@ def loadConfig():
         return newConfig()
 
 def ifLoggedIn(test):
-    if test.text.find(r'Central Authentication Service') == -1:
-    #The login page of CAS will contain these words
+    if test.status_code==204:
         return True
     return False
   
