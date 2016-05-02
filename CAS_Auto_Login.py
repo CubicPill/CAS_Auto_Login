@@ -19,7 +19,7 @@ def newConfig():
     username=input('Username: ')
     passwd=input('Password: ')
     f=open('config.json','w')
-    config={"username": username, "password": passwd, "testUrl": "http://www.v2ex.com/generate_204", "interval_retry_connection": "20", "interval_retry_login": "10", "interval_check_status": "300"}
+    config={"username": username, "password": passwd, "testUrl": "http://www.v2ex.com/generate_204", "interval_retry_connection": "20", "interval_retry_login": "10", "interval_check_status": "300", "max_times_retry_login": "5"}
     f.write(json.dumps(config))
     f.close()
     printWithTimeStamp('Configurations successfully saved.')    
@@ -29,15 +29,22 @@ def readConfig():
     try:
         f=open('config.json')
         try:
-            config=json.loads(f.readline())
-            config and config['interval_retry_login'] and config['interval_check_status'] and config['username'] and config['password'] and config['interval_retry_connection'] and config['testUrl']
-            #Check if the parameters all exist
-        except KeyError as err:
-            printWithTimeStamp('Parameter '+str(err)+' not found.')
+            initconfig=json.loads(f.readline())
+            config={"username": initconfig['username'], "password": initconfig['password'], "testUrl": initconfig['testUrl'], "interval_retry_connection": int(initconfig['interval_retry_connection']), "interval_retry_login": int(initconfig['interval_retry_login']), "interval_check_status": int(initconfig['interval_check_status']), "max_times_retry_login": int(initconfig['max_times_retry_login'])}
+            #Check if the parameters all exist and transform format
+        except KeyError as kerr:
+            printWithTimeStamp('Parameter '+str(kerr)+' not found.')
             printWithTimeStamp('Configuration file is broken. Create a new one.')
             f.close()
             os.remove('config.json')
             newConfig()
+        except ValueError as verr:
+            printWithTimeStamp('Parameter '+str(verr)+' is invalid.')
+            printWithTimeStamp('Configuration file is broken. Create a new one.')
+            f.close()
+            os.remove('config.json')
+            newConfig()
+            
     except PermissionError as err:
         sys.exit(err)
     return config
@@ -59,14 +66,15 @@ def main():
     os.chdir(os.path.dirname(sys.argv[0])) # To read config in the same directory
     printWithTimeStamp('Reading configurations...')
     config=loadConfig()
+    times_retry_login=config['max_times_retry_login']
     printWithTimeStamp('Configurations successfully imported.')
     while True:
         printWithTimeStamp('Checking network status...')
         try:
             test=requests.get(config['testUrl'])
         except:
-            printWithTimeStamp('Connection FAILED. Try again in '+config['interval_retry_connection']+' sec.')
-            sleep(int(config['interval_retry_connection']))
+            printWithTimeStamp('Connection FAILED. Try again in '+str(config['interval_retry_connection'])+' sec.')
+            sleep(config['interval_retry_connection'])
             continue
         while not ifLoggedIn(test):
             printWithTimeStamp('You are offline. Starting login...')
@@ -138,16 +146,26 @@ def main():
             printWithTimeStamp('Login information posted to the CAS server.')
 
             test=requests.get(config['testUrl'])
-            if not ifLoggedIn(test):
-                printWithTimeStamp('Login FAILED. Try again in '+config['interval_retry_login']+' sec. ')
-                sleep(int(config['interval_retry_login']))
+            
+            if not ifLoggedIn(test) :
+                times_retry_login-=1
+                if times_retry_login>0: # If keep trying to login too many times, it may trigger security alarm on the CAS server
+                    printWithTimeStamp('Login FAILED. Try again in '+str(config['interval_retry_login'])+' sec. '+str(times_retry_login)+r' attempt(s) remaining.')
+                else:
+                    printWithTimeStamp('Login FAILED.' +r'Attempts used up. The program will quit.')
+                    sys.exit('Login FAILED')
+                
+                sleep(config['interval_retry_login'])
             if ifLoggedIn(test):
                 printWithTimeStamp('Login successful. Current user: '+username)
+                times_retry_login=config['max_times_retry_login']
+                printWithTimeStamp('Login attempts reseted.')
+                
     
-        printWithTimeStamp('Online. Re-check status in '+config['interval_check_status']+' sec.')    
+        printWithTimeStamp('Online. Re-check status in '+str(config['interval_check_status'])+' sec.')    
         
         
-        sleep(int(config['interval_check_status']))
+        sleep(config['interval_check_status'])
 
 if __name__ == '__main__':
     main()   
