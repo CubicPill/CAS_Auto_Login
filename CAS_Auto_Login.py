@@ -54,8 +54,9 @@ def ifLoggedIn(test):
         return True
     return False
   
-def main():    
-    os.chdir(os.path.dirname(sys.argv[0]))
+def main():
+    printWithTimeStamp("Program started.")
+    os.chdir(os.path.dirname(sys.argv[0])) # To read config in the same directory
     printWithTimeStamp('Reading configurations...')
     config=loadConfig()
     printWithTimeStamp('Configurations successfully imported.')
