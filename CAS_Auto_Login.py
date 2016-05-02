@@ -56,6 +56,7 @@ def ifLoggedIn(test):
     return False
   
 def main():    
+    os.chdir(os.path.dirname(sys.argv[0]))
     printWithTimeStamp('Reading configurations...')
     config=loadConfig()
     printWithTimeStamp('Configurations successfully imported.')
