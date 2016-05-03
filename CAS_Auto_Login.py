@@ -78,6 +78,7 @@ def main():
             continue
         while not ifLoggedIn(test):
             printWithTimeStamp('You are offline. Starting login...')
+            printWithTimeStamp('Start to get login information')
             start=test.text.find(r'wlanuserip')+13
             end=test.text.find(r'&locale=')
             if start != 12:
@@ -88,20 +89,15 @@ def main():
             if start != 10:
                 wlanacip=test.text[start:end]
         
-            printWithTimeStamp('Parameters successfully acquired. wlanacip = '+wlanacip+', wlanuserip = '+wlanuserip)
-
             h={'Host': 'weblogin.sustc.edu.cn', 'Connection': 'keep-alive', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8', 'Upgrade-Insecure-Requests': '1' ,'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36', 'DNT': '1', 'Accept-Encoding': 'gzip, deflate, sdch', 'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4'}
             #Headers are acquired by capturing network traffic
         
             url='http://weblogin.sustc.edu.cn/cas/login?service=http%3A%2F%2Fenet.10000.gd.cn%3A10001%2Fsz%2Fsz112%2Findex.jsp%3Fwlanacip%3D'+wlanacip+'%26wlanuserip%3D'+wlanuserip
             #wlanacip & wlanuserip
         
-            printWithTimeStamp('Start to get login information')
 
             prelogin=requests.get(url,headers=h)
-        
-            printWithTimeStamp('Login information acquired.')
-        
+                
             start=prelogin.text.find(r'name="lt"')+17
             end=start+50
             lt=prelogin.text[start:end]
@@ -126,9 +122,10 @@ def main():
             end=prelogin.headers['Set-Cookie'].find(r'; Path=/cas/;')
             JSESSIONID_SUSTC= prelogin.headers['Set-Cookie'][11:end]
             #JSESSIONID stored in set-cookies
-        
-            printWithTimeStamp('Parameter JSESSIONID acquired. JSESSIONID = '+JSESSIONID_SUSTC)
+            
+            printWithTimeStamp('Login information acquired.')
 
+        
             url='http://weblogin.sustc.edu.cn/cas/login;jsessionid='+JSESSIONID_SUSTC+'?service=http://enet.10000.gd.cn%3A10001%2Fsz%2Fsz112%2Findex.jsp%3Fwlanacip%3D'+wlanacip+'%26wlanuserip%3D'+wlanuserip
             username=config['username']
             passwd=config['password']
@@ -159,7 +156,7 @@ def main():
             if ifLoggedIn(test):
                 printWithTimeStamp('Login successful. Current user: '+username)
                 times_retry_login=config['max_times_retry_login']
-                printWithTimeStamp('Login attempts reseted.')
+                printWithTimeStamp('Login attempts reseted to .'+str(times_retry_login))
                 
     
         printWithTimeStamp('Online. Re-check status in '+str(config['interval_check_status'])+' sec.')    
