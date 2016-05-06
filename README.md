@@ -9,9 +9,9 @@ requests 2.10.0
 ## Configuration items
 'username': Your SUSTC studnet ID   
 'password': CAS login password  
-'interval_retry_connection': In second. If the status check failed (e.g. the server was down or there is no Internet connection), how long the program will wait before next attempt. Default value is 20.  
+'interval_retry_connection': In second. If the status check failed (e.g. the server was down or there is no Internet connection), how long the program will wait before next attempt. Default value is 30.  
 'interval_check_status':  In second. Determine how long the program will wait before next status check. Default value is 300.  
-'interval_retry_login':  In second. If the login failed (e.g. wrong username & password combination, or the CAS server was down), how long the program will wait before next attempt. Default value is 10.  
+'interval_retry_login':  In second. If the login failed (e.g. wrong username & password combination, or the CAS server was down), how long the program will wait before next attempt. Default value is 30.  
 'max_times_retry_login': Maximum time the program will try to login to the server. Default value is 5.
 ## Contacts
 If there are any questions, please reach me on Telegram.   
