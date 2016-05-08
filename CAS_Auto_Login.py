@@ -19,11 +19,10 @@ def newConfig():
     username=input('Username: ')
     passwd=input('Password: ')
     f=open('config.json','w')
-    config={"username": username, "password": passwd, "testUrl": "http://www.v2ex.com/generate_204", "interval_retry_connection": "30", "interval_retry_login": "30", "interval_check_status": "300", "max_times_retry_login": "5"}
+    config={"username": username, "password": passwd, "testUrl": "http://www.v2ex.com/generate_204", "interval_retry_connection": "30", "interval_retry_login": "30", "interval_check_status": "60", "max_times_retry_login": "5"}
     f.write(json.dumps(config))
     f.close()
     printWithTimeStamp('Configurations successfully saved.')    
-    return config
     
 def readConfig():
     try:
@@ -54,7 +53,8 @@ def loadConfig():
         return readConfig()
     else:
         printWithTimeStamp('No configuration file found.')
-        return newConfig()
+        newConfig()
+        return readConfig()
 
 def ifLoggedIn(test):
     if test.status_code==204:
