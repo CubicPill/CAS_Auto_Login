@@ -156,7 +156,7 @@ def main():
             if ifLoggedIn(test):
                 printWithTimeStamp('Login successful. Current user: '+username)
                 times_retry_login=config['max_times_retry_login']
-                printWithTimeStamp('Login attempts reseted to .'+str(times_retry_login))
+                printWithTimeStamp('Login attempts reseted to '+str(times_retry_login)+' .')
                 
     
         printWithTimeStamp('Online. Re-check status in '+str(config['interval_check_status'])+' sec.')    
