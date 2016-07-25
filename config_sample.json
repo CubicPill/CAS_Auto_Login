@@ -1,0 +1,1 @@
+{"testUrl": "http://www.v2ex.com/generate_204", "interval_retry_connection": "30", "interval_retry_login": "30", "password": "", "interval_check_status": "60", "username": "", "max_times_retry_login": "5"}
