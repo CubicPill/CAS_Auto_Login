@@ -68,7 +68,8 @@ def main():
             end = _eventId.find(r'" />')
             _eventId = _eventId[0:end]
             # Get parameter "_eventld"
-            print('_eventId= ' + _eventId + ';')
+            log('_eventId= ' + _eventId + ';')
+
             log('Login information acquired.')
 
             url = 'http://weblogin.sustc.edu.cn' + action
