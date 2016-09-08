@@ -1,18 +1,13 @@
 import requests
+from bs4 import BeautifulSoup
 from time import sleep
-import time
 import json
 import sys
 import os
-import datetime
+import logging
 
 config = None
-
-
-def log(s):
-    ms = int(datetime.datetime.now().microsecond / 1000)
-    ms = '%03d' % ms
-    print('[' + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) + '.' + ms + '] ' + s)
+logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
 
 def load_config():
@@ -23,60 +18,48 @@ def load_config():
 
 
 def main():
-    log("Program started.")
+    logging.info('Program started.')
     os.chdir(os.path.dirname(sys.argv[0]))  # To read config in the same directory
-    log('Reading configurations...')
+    logging.info('Reading configurations...')
     config = load_config()
     times_retry_login = config['max_times_retry_login']
-    log('Configurations successfully imported.')
+    test_url = config['captive_portal_server'] + '/generate_204'
+    logging.info('Configurations successfully imported.')
     while True:
-        log('Checking network status...')
+        logging.info('Checking network status...')
         try:
             login = requests.Session()
-            test = login.get(config['testUrl'])
+            test = login.get(test_url)
         except:
-            log('Connection FAILED. Try again in ' + str(config['interval_retry_connection']) + ' sec.')
+            logging.info('Connection FAILED. Try again in ' + str(config['interval_retry_connection']) + ' sec.')
             sleep(config['interval_retry_connection'])
             continue
         while test.status_code != 204:
 
-            log('You are offline. Starting login...')
-            log('Start to get login information')
+            soup_login = BeautifulSoup(test.content, 'html5lib')
+            if 'CAS' not in soup_login.title.string:
+                logging.warning('Not connected to a SUSTC network')
+                sleep(config['interval_retry_connection'])
+                break
 
-            start = test.text.find(r'action') + 8
-            end = test.text.find(r'" method="post"')
-            action = test.text[start:end]
-            log('action= ' + action + ';')
+            logging.info('You are offline. Starting login...')
+            logging.info('Start to get login information')
 
-            start = test.text.find(r'name="lt"') + 17
-            lt = test.text[start:]
-            end = lt.find(r'" />')
-            lt = lt[0:end]
-            # Get parameter "lt"
-            log('lt= ' + lt + ';')
+            action = soup_login.find('form', id='fm1')['action']  # get login url
+            logging.debug('action= ' + action)
 
-            start = test.text.find(r'name="execution"') + 24
-            execution = test.text[start:]
-            end = execution.find(r'" />')
-            execution = execution[0:end]
-            # Get parameter "execution"
-            log('execution= ' + execution + ';')
+            lt = soup_login.find('input', attrs={'name': 'lt'})['value']  # Get parameter "lt"
+            logging.debug('lt= ' + lt)
 
-            start = test.text.find(r'name="_eventId"') + 23
-            end = start + 10
-            _eventId = test.text[start:end]
-            end = _eventId.find(r'" />')
-            _eventId = _eventId[0:end]
-            # Get parameter "_eventld"
-            log('_eventId= ' + _eventId + ';')
+            execution = soup_login.find('input', attrs={'name': 'execution'})['value']  # Get parameter "execution"
+            logging.debug('execution= ' + execution)
 
-            log('Login information acquired.')
+            logging.info('Login information acquired.')
 
-            url = 'http://weblogin.sustc.edu.cn' + action
-            username = config['username']
-            password = config['password']
-            # SUSTC CAS username (StudentID) and password
-            data = 'username=' + username + '&password=' + password + '&lt=' + lt + '&execution=' + execution + '&_eventId=submit&submit=LOGIN'
+            url = 'http://weblogin.sustc.edu.cn{}'.format(action)
+
+            data = 'username={}&password={}&lt={}&execution={}&_eventId=submit&submit=LOGIN'. \
+                format(config['username'], config['password'], lt, execution)
 
             h = {'Host': 'weblogin.sustc.edu.cn', 'Connection': 'keep-alive', 'Cache-Control': 'max-age=0',
                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -85,30 +68,30 @@ def main():
                  'Content-Type': 'application/x-www-form-urlencoded', 'DNT': '1', 'Referer': url,
                  'Accept-Encoding': 'gzip, deflate', 'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4'}
 
-            log('Login as ' + username)
+            logging.info('Login as ' + config['username'])
 
-            login.post(url, data=data, headers=h)
-            log('Login information posted to the CAS server.')
+            r = login.post(url, data=data, headers=h)
+            logging.info('Login information posted to the CAS server.')
+            soup_response = BeautifulSoup(r.content, 'html5lib')
 
-            test = requests.get(config['testUrl'])
-
-            if test.status_code != 204:
+            if soup_response.find('div', id='msg')['class'][0] != 'success':
                 times_retry_login -= 1
                 if times_retry_login > 0:  # If keep trying to login too many times, it may trigger security alarm on the CAS server
-                    log(
+                    logging.info(
                         'Login FAILED. Try again in ' + str(config['interval_retry_login']) + ' sec. ' + str(
                             times_retry_login) + r' attempt(s) remaining.')
                 else:
-                    log('Login FAILED.' + r'Attempts used up. The program will quit.')
+                    logging.info('Login FAILED.' + r'Attempts used up. The program will quit.')
                     sys.exit('Login FAILED')
 
                 sleep(config['interval_retry_login'])
             else:
-                log('Login successful. Current user: ' + username)
+                logging.info('Login successful')
                 times_retry_login = config['max_times_retry_login']
-                log('Login attempts reset to ' + str(times_retry_login) + ' .')
+                logging.info('Login attempts reset to ' + str(times_retry_login) + ' .')
+                break
 
-        log('Online. Re-check status in ' + str(config['interval_check_status']) + ' sec.')
+        logging.info('Online. Re-check status in ' + str(config['interval_check_status']) + ' sec.')
 
         sleep(config['interval_check_status'])
 
