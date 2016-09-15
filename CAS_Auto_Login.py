@@ -48,18 +48,17 @@ def main():
             action = soup_login.find('form', id='fm1')['action']  # get login url
             logging.debug('action= ' + action)
 
-            lt = soup_login.find('input', attrs={'name': 'lt'})['value']  # Get parameter "lt"
-            logging.debug('lt= ' + lt)
-
-            execution = soup_login.find('input', attrs={'name': 'execution'})['value']  # Get parameter "execution"
-            logging.debug('execution= ' + execution)
+            info = {}
+            for element in soup_login.find('form').find_all('input'):
+                if element.has_attr('value'):
+                    info[element['name']] = element['value']
+            info['username'] = config['username']
+            info['password'] = config['password']
+            logging.debug(info)
 
             logging.info('Login information acquired.')
 
             url = 'http://weblogin.sustc.edu.cn{}'.format(action)
-
-            data = 'username={}&password={}&lt={}&execution={}&_eventId=submit&submit=LOGIN'. \
-                format(config['username'], config['password'], lt, execution)
 
             h = {'Host': 'weblogin.sustc.edu.cn', 'Connection': 'keep-alive', 'Cache-Control': 'max-age=0',
                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -70,7 +69,7 @@ def main():
 
             logging.info('Login as ' + config['username'])
 
-            r = login.post(url, data=data, headers=h)
+            r = login.post(url, data=info, headers=h)
             logging.info('Login information posted to the CAS server.')
             soup_response = BeautifulSoup(r.content, 'html5lib')
 
