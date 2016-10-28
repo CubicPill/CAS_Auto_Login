@@ -19,8 +19,12 @@ def load_config():
 
 def main():
     logging.info('Program started.')
-    os.chdir(os.path.dirname(sys.argv[0]))  # To read config in the same directory
+    try:
+        os.chdir(os.path.dirname(sys.argv[0]))  # To read config in the same directory
+    except OSError:
+        pass
     logging.info('Reading configurations...')
+    global config
     config = load_config()
     times_retry_login = config['max_times_retry_login']
     test_url = config['captive_portal_server'] + '/generate_204'
@@ -29,7 +33,7 @@ def main():
         logging.info('Checking network status...')
         try:
             login = requests.Session()
-            test = login.get(test_url)
+            test = login.get(test_url, timeout=30)
         except:
             logging.info('Connection FAILED. Try again in ' + str(config['interval_retry_connection']) + ' sec.')
             sleep(config['interval_retry_connection'])
@@ -58,18 +62,25 @@ def main():
 
             logging.info('Login information acquired.')
 
-            url = 'http://weblogin.sustc.edu.cn{}'.format(action)
+            url = 'http://cas.sustc.edu.cn{}'.format(action)
 
-            h = {'Host': 'weblogin.sustc.edu.cn', 'Connection': 'keep-alive', 'Cache-Control': 'max-age=0',
-                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                 'Origin': 'http://weblogin.sustc.edu.cn', 'Upgrade-Insecure-Requests': '1',
-                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36',
-                 'Content-Type': 'application/x-www-form-urlencoded', 'DNT': '1', 'Referer': url,
-                 'Accept-Encoding': 'gzip, deflate', 'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4'}
+            h = {
+                'Host': 'cas.sustc.edu.cn',
+                'Connection': 'keep-alive',
+                'Cache-Control': 'max-age=0',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Origin': 'http://cas.sustc.edu.cn',
+                'Upgrade-Insecure-Requests': '1',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'DNT': '1',
+                'Referer': url,
+                'Accept-Encoding': 'gzip, deflate', 'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4'
+            }
 
             logging.info('Login as ' + config['username'])
 
-            r = login.post(url, data=info, headers=h)
+            r = login.post(url, data=info, headers=h, timeout=30)
             logging.info('Login information posted to the CAS server.')
             soup_response = BeautifulSoup(r.content, 'html5lib')
 
