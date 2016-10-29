@@ -7,7 +7,7 @@ import os
 import logging
 
 config = None
-logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
+logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.DEBUG)
 
 
 def load_config():
@@ -56,21 +56,23 @@ def main():
             for element in soup_login.find('form').find_all('input'):
                 if element.has_attr('value'):
                     info[element['name']] = element['value']
-            info['username'] = config['username']
-            info['password'] = config['password']
+
             logging.debug(info)
 
             logging.info('Login information acquired.')
 
-            url = 'http://cas.sustc.edu.cn{}'.format(action)
+            info['username'] = config['username']
+            info['password'] = config['password']
+
+            url = 'https://cas.sustc.edu.cn{}'.format(action)
 
             h = {
-                'Host': 'cas.sustc.edu.cn',
-                'Connection': 'keep-alive',
+                # 'Host': 'cas.sustc.edu.cn',
+                # 'Connection': 'keep-alive',
                 'Cache-Control': 'max-age=0',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                 'Origin': 'http://cas.sustc.edu.cn',
-                'Upgrade-Insecure-Requests': '1',
+                # 'Upgrade-Insecure-Requests': '1',
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36',
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'DNT': '1',
@@ -83,9 +85,13 @@ def main():
             r = login.post(url, data=info, headers=h, timeout=30)
             logging.info('Login information posted to the CAS server.')
             soup_response = BeautifulSoup(r.content, 'html5lib')
-
-            if soup_response.find('div', id='msg')['class'][0] != 'success':
+            success = soup_response.find('div', {'class': 'success'})
+            err = soup_response.find('div', {'class': 'errors'})
+            if err:
                 times_retry_login -= 1
+                logging.error('An error occurred.')
+                logging.error(err.h2.text)
+                logging.error(err.p.text)
                 if times_retry_login > 0:  # If keep trying to login too many times, it may trigger security alarm on the CAS server
                     logging.info(
                         'Login FAILED. Try again in ' + str(config['interval_retry_login']) + ' sec. ' + str(
@@ -95,7 +101,8 @@ def main():
                     sys.exit('Login FAILED')
 
                 sleep(config['interval_retry_login'])
-            else:
+
+            elif success:
                 logging.info('Login successful')
                 times_retry_login = config['max_times_retry_login']
                 logging.info('Login attempts reset to ' + str(times_retry_login) + ' .')
