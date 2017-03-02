@@ -5,6 +5,7 @@ import json
 import sys
 import os
 import logging
+import re
 
 config = None
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.DEBUG)
@@ -47,6 +48,11 @@ def main():
                 break
 
             logging.info('You are offline. Starting login...')
+
+            hostname = 'http://enet.10000.gd.cn:10001/sz/sz112/'
+            rem_link = re.search(r'window\.location = \'(.*)\';', test.text).group(1)
+            url = hostname  + rem_link
+            soup_login = BeautifulSoup(login.get(url).content, 'html5lib')
             logging.info('Start to get login information')
 
             action = soup_login.find('form', id='fm1')['action']  # get login url
@@ -67,12 +73,10 @@ def main():
             url = 'https://cas.sustc.edu.cn{}'.format(action)
 
             h = {
-                # 'Host': 'cas.sustc.edu.cn',
-                # 'Connection': 'keep-alive',
+
                 'Cache-Control': 'max-age=0',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                 'Origin': 'http://cas.sustc.edu.cn',
-                # 'Upgrade-Insecure-Requests': '1',
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36',
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'DNT': '1',
