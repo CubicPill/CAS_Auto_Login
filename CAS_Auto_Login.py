@@ -1,19 +1,18 @@
+import json
+import logging
+import os
+import re
+import sys
+from time import sleep
+
 import requests
 from bs4 import BeautifulSoup
-from time import sleep
-import json
-import sys
-import os
-import logging
-import re
 
-config = None
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.DEBUG)
 
 
 def load_config():
-    global config
-    with open('config.json') as f:
+    with open('./config.json') as f:
         config = json.load(f)
     return config
 
@@ -25,33 +24,31 @@ def main():
     except OSError:
         pass
     logging.info('Reading configurations...')
-    global config
     config = load_config()
     times_retry_login = config['max_times_retry_login']
-    test_url = config['captive_portal_server'] + '/generate_204'
+    test_url = config['captive_portal_server']
     logging.info('Configurations successfully imported.')
     while True:
         logging.info('Checking network status...')
         try:
             login = requests.Session()
             test = login.get(test_url, timeout=30)
-        except:
+        except requests.RequestException:
             logging.info('Connection FAILED. Try again in ' + str(config['interval_retry_connection']) + ' sec.')
             sleep(config['interval_retry_connection'])
             continue
         while test.status_code != 204:
-
             soup_login = BeautifulSoup(test.content, 'html5lib')
             if 'CAS' not in soup_login.title.string:
                 logging.warning('Not connected to a SUSTC network')
                 sleep(config['interval_retry_connection'])
-                break
+                continue
 
             logging.info('You are offline. Starting login...')
 
             hostname = 'http://enet.10000.gd.cn:10001/sz/sz112/'
             rem_link = re.search(r'window\.location = \'(.*)\';', test.text).group(1)
-            url = hostname  + rem_link
+            url = hostname + rem_link
             soup_login = BeautifulSoup(login.get(url).content, 'html5lib')
             logging.info('Start to get login information')
 
@@ -73,7 +70,6 @@ def main():
             url = 'https://cas.sustc.edu.cn{}'.format(action)
 
             h = {
-
                 'Cache-Control': 'max-age=0',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                 'Origin': 'http://cas.sustc.edu.cn',
@@ -81,7 +77,8 @@ def main():
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'DNT': '1',
                 'Referer': url,
-                'Accept-Encoding': 'gzip, deflate', 'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4'
+                'Accept-Encoding': 'gzip, deflate',
+                'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4'
             }
 
             logging.info('Login as ' + config['username'])
@@ -96,23 +93,23 @@ def main():
                 logging.error('An error occurred.')
                 logging.error(err.h2.text)
                 logging.error(err.p.text)
-                if times_retry_login > 0:  # If keep trying to login too many times, it may trigger security alarm on the CAS server
+                if times_retry_login > 0:
+                    # If keep trying to login too many times, it may trigger security alarm on the CAS server
                     logging.info(
-                        'Login FAILED. Try again in ' + str(config['interval_retry_login']) + ' sec. ' + str(
-                            times_retry_login) + r' attempt(s) remaining.')
+                        'Login FAILED. Try again in {time} sec. {attempt} attempt(s) remaining.'
+                            .format(time=config['interval_retry_login'], attempt=times_retry_login))
                 else:
-                    logging.info('Login FAILED.' + r'Attempts used up. The program will quit.')
+                    logging.info('Login FAILED. Attempts used up. The program will quit.')
                     sys.exit('Login FAILED')
-
                 sleep(config['interval_retry_login'])
 
             elif success:
                 logging.info('Login successful')
                 times_retry_login = config['max_times_retry_login']
-                logging.info('Login attempts reset to ' + str(times_retry_login) + ' .')
+                logging.info('Login attempts reset to {attempt}.'.format(attempt=times_retry_login))
                 break
 
-        logging.info('Online. Re-check status in ' + str(config['interval_check_status']) + ' sec.')
+        logging.info('Online. Re-check status in {time} sec.'.format(time=config['interval_check_status']))
 
         sleep(config['interval_check_status'])
 
