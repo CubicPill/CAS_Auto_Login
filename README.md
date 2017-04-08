@@ -14,7 +14,7 @@ beautifulsoup4==4.5.3
 **interval_retry_connection**: In second. If the status check failed (e.g. the server was down or there is no Internet connection), how long the program will wait before next attempt. Default value is 30.
 **interval_check_status**:  In second. Determine how long the program will wait before next status check. Default value is 60.
 **interval_retry_login**:  In second. If the login failed (e.g. wrong username & password combination, login params were changed, or the CAS server was down), how long the program will wait before next attempt. Default value is 30.
-**max_times_retry_login**: Maximum time the program will try to login to the server. Default value is 5.
+**max_times_retry_login**: Maximum time the program will try to login to the server. Default value is 5.    
 
 ## Settings for OpenWrt routers
 If you use a router which has OpenWrt, then it's strongly recommended that you use the following script to reconnect to wan interface when the connection was down.
