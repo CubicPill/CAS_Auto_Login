@@ -3,7 +3,9 @@ SUSTC network account auto login. Coded in Python.
 Java version with GUI (discontinued): [caslogin-gui](https://github.com/CubicPill/caslogin-gui)
 ## Requirements
 Python2.7+
-requests==2.11.1
+
+requests==2.11.
+
 beautifulsoup4==4.5.3
 
 ## Configuration items
