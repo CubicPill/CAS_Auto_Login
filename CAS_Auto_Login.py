@@ -24,7 +24,8 @@ def load_config():
 
 
 def do_login(url, username, password):
-    soup_login = BeautifulSoup(login.get(url).content, 'html5lib')
+    req = login.get(url)
+    soup_login = BeautifulSoup(req.content, 'html5lib')
     logging.info('Start to get login information')
 
     info = {}
@@ -44,7 +45,7 @@ def do_login(url, username, password):
 
     logging.info('Login as ' + username)
 
-    r = login.post(url, data=info, timeout=30)
+    r = login.post(req.url, data=info, timeout=30)
     logging.info('Login information posted to the CAS server.')
     soup_response = BeautifulSoup(r.content, 'html5lib')
     success = soup_response.find('div', {'class': 'success'})
