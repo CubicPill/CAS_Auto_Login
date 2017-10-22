@@ -24,6 +24,12 @@ def load_config():
 
 
 def do_login(url, username, password):
+    """
+    :param url: login url
+    :param username:
+    :param password:
+    :return: success or error
+    """
     req = login.get(url)
     soup_login = BeautifulSoup(req.content, 'html5lib')
     logging.info('Start to get login information')
@@ -54,6 +60,11 @@ def do_login(url, username, password):
 
 
 def test_network_with_204(url):
+    """
+    test connection using captive portal server
+    :param url:
+    :return:
+    """
     try:
         test = login.get(url, timeout=30)
         content = test.content
