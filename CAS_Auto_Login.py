@@ -54,8 +54,8 @@ def do_login(url, username, password):
     r = login.post(req.url, data=info, timeout=30)
     logging.info('Login information posted to the CAS server.')
     soup_response = BeautifulSoup(r.content, 'html5lib')
-    success = soup_response.find('div', {'class': 'success'})
-    err = soup_response.find('div', {'class': 'errors', 'id': 'msg'})
+    success = soup_response.find('div', {'class': 'alert-success'})
+    err = soup_response.find('div', {'class': 'alert-danger'})
     return success, err
 
 
