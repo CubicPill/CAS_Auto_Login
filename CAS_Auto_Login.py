@@ -90,18 +90,25 @@ def main():
     test_url = config['captive_portal_server']
     logging.info('Configurations successfully imported.')
     while True:
-        logging.info('Checking network status...')
-        status, content = test_network_with_204(test_url)
+        logging.debug('Checking network status...')
+        try:
+            status, content = test_network_with_204(test_url)
+        except requests.RequestException as e:
+            logging.warning(e.__str__())
+            continue
         if status == CONNECTION_TIMEOUT:
-            logging.info('Connection FAILED. Try again in ' + str(config['interval_retry_connection']) + ' sec.')
-            sleep(config['interval_retry_connection'])
+            logging.warning('Connection FAILED.')
             continue
 
         while status == NEED_LOGIN:
-            soup_login = BeautifulSoup(content, 'html5lib')
+            try:
+                soup_login = BeautifulSoup(content, 'html5lib')
+            except requests.ConnectionError or AttributeError:
+                continue
+
             if 'CAS' not in soup_login.title.string:
                 logging.warning('Not connected to a SUSTC network')
-                sleep(config['interval_retry_connection'])
+                sleep(config['interval_check_status'])
                 continue
 
             logging.info('You are offline. Starting login...')
@@ -121,17 +128,16 @@ def main():
                         'Login FAILED. Try again in {time} sec. {attempt} attempt(s) remaining.'
                             .format(time=config['interval_retry_login'], attempt=times_retry_login))
                 else:
-                    logging.info('Login FAILED. Attempts used up. The program will quit.')
+                    logging.critical('Login FAILED with maximum retries exhausted. Exiting')
                     sys.exit(1)
                 sleep(config['interval_retry_login'])
 
             elif success:
-                logging.info('Login successful')
+                logging.debug('Login successful')
                 times_retry_login = config['max_times_retry_login']
-                logging.info('Login attempts reset to {attempt}.'.format(attempt=times_retry_login))
                 break
 
-        logging.info('Online. Re-check status in {time} sec.'.format(time=config['interval_check_status']))
+        logging.debug('Online')
 
         sleep(config['interval_check_status'])
 
